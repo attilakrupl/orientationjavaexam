@@ -9,9 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
@@ -23,6 +21,18 @@ public class GroupController {
 
     @Autowired
     private UserService userService;
+
+    @GetMapping("/group")
+    public ResponseEntity<?> getGroups(@RequestParam(required = false) Date created_at, @RequestParam(required = false) String name ) {
+        List<UserGroup> gl = groupService.getAllGroups();
+        for(var g : gl) {
+            var users = userService.getAllUsersForGroup(g);
+            g.setUsers(users);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("groups", gl));
+    }
+
     @PostMapping("/groups/generate")
     public ResponseEntity<?> generateGroups(@RequestBody(required=false) GroupGenerationRequest request){
         if(request==null || request.getGroupLimit()==0) {
@@ -53,12 +63,6 @@ public class GroupController {
 
         }
 
-        List<UserGroup> gl = groupService.getAllGroups();
-        for(var g : gl) {
-            var users = userService.getAllUsersForGroup(g);
-            g.setUsers(users);
-        }
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("groups", gl));
+        return getGroups();
     }
 }

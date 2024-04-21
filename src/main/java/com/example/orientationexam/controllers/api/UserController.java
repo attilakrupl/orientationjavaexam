@@ -25,7 +25,7 @@ public class UserController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        User savedUser = userService.saveUser(request.getName());
+        User savedUser = userService.addNewUserByName(request.getName());
         UserCreationSuccessResponse response = new UserCreationSuccessResponse();
         response.setName(savedUser.getName());
         response.setId(savedUser.getId());

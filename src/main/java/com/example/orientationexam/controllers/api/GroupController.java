@@ -1,8 +1,7 @@
 package com.example.orientationexam.controllers.api;
 
 import com.example.orientationexam.dtos.GroupGenerationRequest;
-import com.example.orientationexam.dtos.UserCreationRequest;
-import com.example.orientationexam.models.Group;
+import com.example.orientationexam.models.UserGroup;
 import com.example.orientationexam.models.User;
 import com.example.orientationexam.services.GroupService;
 import com.example.orientationexam.services.UserService;
@@ -14,11 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 @Controller
 @RequestMapping("/api")
@@ -29,35 +24,41 @@ public class GroupController {
     @Autowired
     private UserService userService;
     @PostMapping("/groups/generate")
-    public ResponseEntity<?> generateGroups(@RequestBody GroupGenerationRequest request){
-        if(request == null) {
+    public ResponseEntity<?> generateGroups(@RequestBody(required=false) GroupGenerationRequest request){
+        if(request==null || request.getGroupLimit()==0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Missing groupLimit"));
         }
         List<User> allUsers = userService.getAllUsers();
         for(User user : allUsers) {
-            user.setForeignGroup(null);
+            user.setGroup_id(null);
         }
+        userService.updateUsers(allUsers);
         groupService.deleteGroups();
-
+        int groupsNeeded = allUsers.size() % request.getGroupLimit() == 0 ? allUsers.size() / request.getGroupLimit() : allUsers.size() / request.getGroupLimit() + 1;
         List<Long> groupIDs = new ArrayList<>();
-        for(int i = 0; i < request.getGroupLimit(); ++i) {
-            groupIDs.add(groupService.createGroup().getGid());
-        }
-        for(Long id : groupIDs) {
-            System.out.println(id);
+        for(int i = 0; i < groupsNeeded; ++i) {
+            groupIDs.add(groupService.createGroup().getId());
         }
 
+        Collections.shuffle(allUsers);
+
+        int actualGroupIdx = 0;
         for(User user : allUsers) {
-            Random rand = new Random();
-            user.setForeignGroup(groupService.getGroupById(groupIDs.get(rand.nextInt(groupIDs.size()))));
-            userService.saveExistingUser(user);
+            if(userService.getAllUsersForGroup(groupService.getGroupById(groupIDs.get(actualGroupIdx))).size()>=request.getGroupLimit())
+            {
+                ++actualGroupIdx;
+            }
+            user.setGroup_id(groupIDs.get(actualGroupIdx));
+            userService.updateUser(user);
+
         }
 
-        List<Group> gl = groupService.getAllGroups();
-        for(Group g : gl) {
-            g.setUsers(groupService.getAllUsersByGroupID(g.getGid()));
+        List<UserGroup> gl = groupService.getAllGroups();
+        for(var g : gl) {
+            var users = userService.getAllUsersForGroup(g);
+            g.setUsers(users);
         }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("status", gl));
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("groups", gl));
     }
 }

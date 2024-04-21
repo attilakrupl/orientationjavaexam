@@ -1,10 +1,16 @@
 package com.example.orientationexam.models;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "users")
 public class User {
 
@@ -16,7 +22,6 @@ public class User {
     @Column(name = "name")
     private String name;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "foreign_group_id")
-    private Group foreignGroup;
+    @Column(name = "group_id")
+    private Long group_id;
 }

@@ -17,8 +17,8 @@ public class UserService {
         return (List<User>) userRepository.findAll();
     }
 
-    public List<User> getAllUsersForGroup(UserGroup g) {
-        return userRepository.findByUserGroup(g.getId());
+    public List<User> getAllUsersForGroup(Long id) {
+        return userRepository.findByUserGroup(id);
     }
 
     public User addNewUserByName(String name) {

@@ -22,16 +22,6 @@ public class GroupController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/group")
-    public ResponseEntity<?> getGroups(@RequestParam(required = false) Date created_at, @RequestParam(required = false) String name ) {
-        List<UserGroup> gl = groupService.getAllGroups();
-        for(var g : gl) {
-            var users = userService.getAllUsersForGroup(g);
-            g.setUsers(users);
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("groups", gl));
-    }
 
     @PostMapping("/groups/generate")
     public ResponseEntity<?> generateGroups(@RequestBody(required=false) GroupGenerationRequest request){
@@ -54,7 +44,7 @@ public class GroupController {
 
         int actualGroupIdx = 0;
         for(User user : allUsers) {
-            if(userService.getAllUsersForGroup(groupService.getGroupById(groupIDs.get(actualGroupIdx))).size()>=request.getGroupLimit())
+            if(userService.getAllUsersForGroup(groupIDs.get(actualGroupIdx)).size()>=request.getGroupLimit())
             {
                 ++actualGroupIdx;
             }
@@ -63,6 +53,12 @@ public class GroupController {
 
         }
 
-        return getGroups();
+        List<UserGroup> gl = groupService.getAllGroups();
+        for(var g : gl) {
+            var users = userService.getAllUsersForGroup(g.getId());
+            g.setUsers(users);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("groups", gl));
     }
 }
